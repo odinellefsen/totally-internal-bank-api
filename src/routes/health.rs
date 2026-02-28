@@ -1,7 +1,13 @@
 use actix_web::{HttpResponse, Responder, web};
+use sqlx::PgPool;
 
-async fn health_check() -> impl Responder {
-    HttpResponse::Ok().body("ok")
+async fn health_check(db: web::Data<PgPool>) -> impl Responder {
+    let result = sqlx::query("SELECT 1").execute(db.get_ref()).await;
+
+    match result {
+        Ok(_) => HttpResponse::Ok().body("ok"),
+        Err(_) => HttpResponse::InternalServerError().body("db not ready"),
+    }
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {
