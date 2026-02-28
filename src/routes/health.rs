@@ -5,5 +5,5 @@ async fn health_check() -> impl Responder {
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.route("/health", web::get().to(health_check))
+    cfg.route("/health", web::get().to(health_check));
 }
