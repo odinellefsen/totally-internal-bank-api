@@ -6,7 +6,7 @@ async fn hello() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Bind to localhost:8080
+    println!("Process is running");
     HttpServer::new(|| {
         App::new()
             .route("/", web::get().to(hello))
