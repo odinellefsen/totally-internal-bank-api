@@ -19,7 +19,6 @@ async fn main() -> std::io::Result<()> {
 
     let db_pool = web::Data::new(pool);
 
-    println!("Process is running");
     HttpServer::new(move || {
         App::new()
             .app_data(db_pool.clone())
