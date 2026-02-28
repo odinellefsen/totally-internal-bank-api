@@ -5,8 +5,8 @@ async fn health_check(db: web::Data<PgPool>) -> impl Responder {
     let result = sqlx::query("SELECT 1").execute(db.get_ref()).await;
 
     match result {
-        Ok(_) => HttpResponse::Ok().body("ok"),
-        Err(_) => HttpResponse::InternalServerError().body("db not ready"),
+        Ok(_) => HttpResponse::Ok().json("ok"),
+        Err(_) => HttpResponse::InternalServerError().json("db not ready"),
     }
 }
 
