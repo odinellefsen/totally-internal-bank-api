@@ -1,6 +1,9 @@
 mod routes;
 
-use actix_web::{App, HttpServer};
+use actix_web::{App, HttpServer, web};
+use dotenvy::dotenv;
+use sqlx::postgres::PgPoolOptions;
+use std::env;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
