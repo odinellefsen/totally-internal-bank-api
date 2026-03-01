@@ -1,0 +1,14 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "driver": "PostgreSQL",
+            "database": "bank",
+            "username": "postgres",
+            "connectString": "postgres://postgres:postgres@localhost:5432/bank",
+            "name": "Setur Bank DB"
+        }
+    ]
+}
