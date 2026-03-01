@@ -1,4 +1,7 @@
-#[path = "create-customer.rs"]
 mod create_customer;
 
-pub use create_customer::config;
+use actix_web::web;
+
+pub fn config(cfg: &mut web::ServiceConfig) {
+    create_customer::config(cfg);
+}
