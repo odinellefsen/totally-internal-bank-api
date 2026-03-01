@@ -12,7 +12,7 @@ async fn main() -> std::io::Result<()> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     let pool = PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(20)
         .connect(&database_url)
         .await
         .expect("Failed to connect to Postgres");
@@ -24,7 +24,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(db_pool.clone())
             .configure(routes::config)
     })
-    // Single-threaded: exactly 1 worker (OS) thread
+    // Single-threaded: exactly 1 worker (OS) thread (Node.js style)
     .workers(1)
     .bind(("127.0.0.1", 8080))?
     .run()
