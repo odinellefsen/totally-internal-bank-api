@@ -34,3 +34,7 @@ async fn create_customer(
         ERR(err) => HttpResponse::BadRequest().json(format!("insert failed: {err}")),
     }
 }
+
+pub fn config(cfg: &mut web::ServiceConfig) {
+    cfg.route("/customer", web::post().to(create_customer));
+}
