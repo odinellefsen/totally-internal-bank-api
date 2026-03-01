@@ -7,3 +7,4 @@ edition = "2024"
 actix-web = "4"
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "macros"] }
 dotenvy = "0.15"
+serde = { version = "1", features = ["derive"] }
