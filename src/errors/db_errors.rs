@@ -1,5 +1,5 @@
+use crate::http::response::ApiErrorBody;
 use actix_web::HttpResponse;
-use serde::Serialize;
 use sqlx::Error;
 
 const CONSTRAINT_CUSTOMER_ID_9_DIGITS: &str = "customer_id_must_be_9_digits_chk";
@@ -7,13 +7,6 @@ const CONSTRAINT_CUSTOMER_FIRST_NAME_LEN: &str = "customer_first_name_len_chk";
 const CONSTRAINT_CUSTOMER_MIDDLE_NAME_LEN: &str = "customer_middle_name_len_chk";
 const CONSTRAINT_CUSTOMER_LAST_NAME_LEN: &str = "customer_last_name_len_chk";
 const CONSTRAINT_CUSTOMER_PKEY: &str = "customer_pkey";
-
-#[derive(Serialize)]
-struct ApiErrorBody<'a> {
-    status: u16,
-    code: &'a str,
-    message: &'a str,
-}
 
 pub fn map_db_error(err: &Error) -> HttpResponse {
     if let Error::Database(db_err) = err {
