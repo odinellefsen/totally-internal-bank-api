@@ -6,7 +6,7 @@ POST http://localhost:8080/customers
 Content-Type: application/json
 
 {
-    "customer_id": 190902501,
+    "customer_id": 190902502,
     "first_name": "John",
     "middle_name": "Doe",
     "last_name": "Smith",
