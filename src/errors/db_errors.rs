@@ -21,6 +21,9 @@ pub fn map_db_error(err: &Error) -> HttpResponse {
         // 23502: not null violation
         // 22P02: invalid text representation
         // 22007: invalid date format
+        // 22008: date exceeded the valid range
+        // 22009: date out of range
+        // 22015: date is not a valid date
 
         return match (sql_state.as_str(), constraint) {
             ("23505", Some(CONSTRAINT_CUSTOMER_PKEY)) => conflict("Customer already exists."),
@@ -37,7 +40,10 @@ pub fn map_db_error(err: &Error) -> HttpResponse {
                 bad_request("Last name must be shorter than 150 characters.")
             }
             ("23502", _) => bad_request("Missing required field."),
+            ("22008", _) => bad_request("Invalid date format. Date exceeded the valid range"),
             ("22007", _) => bad_request("Invalid date format."),
+            ("22009", _) => bad_request("Invalid date format. Date out of range"),
+            ("22015", _) => bad_request("Invalid date format. Date is not a valid date"),
             _ => internal_error(),
         };
     }
