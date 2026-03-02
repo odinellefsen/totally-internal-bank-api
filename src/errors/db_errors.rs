@@ -40,7 +40,6 @@ pub fn map_db_error(err: &Error) -> HttpResponse {
                 bad_request("Last name must be shorter than 150 characters.")
             }
             ("BAD_REQUEST", _) => bad_request("Missing required field."),
-            ("INTERNAL_ERROR", _) => internal_error(),
             _ => internal_error(),
         };
     }
