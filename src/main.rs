@@ -1,4 +1,5 @@
 mod errors;
+mod http;
 mod routes;
 
 use actix_web::{App, HttpResponse, HttpServer, web};
