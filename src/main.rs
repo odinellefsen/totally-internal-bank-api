@@ -1,10 +1,17 @@
-mod routes;
 mod errors;
+mod routes;
 
-use actix_web::{App, HttpServer, web};
+use actix_web::{App, HttpResponse, HttpServer, web};
 use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
+
+#[derive(serde::Serialize)]
+struct ApiErrorResponse {
+    status: u16,
+    code: &'static str,
+    message: String,
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -23,6 +30,15 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(db_pool.clone())
+            .app_data(web::JsonConfig::default().error_handler(|err, _req| {
+                let response = HttpResponse::BadRequest().json(ApiErrorResponse {
+                    status: 400,
+                    code: "INVALID_JSON",
+                    message: err.to_string(),
+                });
+
+                actix_web::error::InternalError::from_response(err, response).into()
+            }))
             .configure(routes::config)
     })
     // Single-threaded: exactly 1 worker (OS) thread (Node.js style)
