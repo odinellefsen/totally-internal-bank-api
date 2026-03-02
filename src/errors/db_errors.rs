@@ -27,9 +27,9 @@ pub fn map_db_error(err: &Error) -> HttpResponse {
 
         return match (sql_state.as_str(), constraint) {
             ("23505", Some(CONSTRAINT_CUSTOMER_PKEY)) => conflict("Customer already exists."),
-            ("23514", Some(CONSTRAINT_CUSTOMER_ID_9_DIGITS)) => {
-                bad_request("Customer ID must be a 9-digit number.")
-            }
+            ("23514", Some(CONSTRAINT_CUSTOMER_ID_9_DIGITS)) => bad_request(
+                "Customer ID must be a 9-digit number. It represents the SSN of the customer.",
+            ),
             ("23514", Some(CONSTRAINT_CUSTOMER_FIRST_NAME_LEN)) => {
                 bad_request("First name must be shorter than 150 characters.")
             }
