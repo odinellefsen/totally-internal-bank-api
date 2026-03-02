@@ -16,37 +16,33 @@ pub fn map_db_error(err: &Error) -> HttpResponse {
             .unwrap_or_else(|| "UNKNOWN".to_string());
         let constraint = db_err.constraint();
 
-        let sql_state_code = sql_state_code_mapper(sql_state.as_str());
+        // 23505: duplicate key violation
+        // 23514: check violation
+        // 23502: not null violation
+        // 22P02: invalid text representation
+        // 22007: invalid date format
 
-        return match (sql_state_code, constraint) {
-            ("CONFLICT", Some(CONSTRAINT_CUSTOMER_PKEY)) => conflict("Customer already exists."),
-            ("BAD_REQUEST", Some(CONSTRAINT_CUSTOMER_ID_9_DIGITS)) => {
+        return match (sql_state.as_str(), constraint) {
+            ("23505", Some(CONSTRAINT_CUSTOMER_PKEY)) => conflict("Customer already exists."),
+            ("23514", Some(CONSTRAINT_CUSTOMER_ID_9_DIGITS)) => {
                 bad_request("Customer ID must be a 9-digit number.")
             }
-            ("BAD_REQUEST", Some(CONSTRAINT_CUSTOMER_FIRST_NAME_LEN)) => {
+            ("23514", Some(CONSTRAINT_CUSTOMER_FIRST_NAME_LEN)) => {
                 bad_request("First name must be shorter than 150 characters.")
             }
-            ("BAD_REQUEST", Some(CONSTRAINT_CUSTOMER_MIDDLE_NAME_LEN)) => {
+            ("23514", Some(CONSTRAINT_CUSTOMER_MIDDLE_NAME_LEN)) => {
                 bad_request("Middle name must be shorter than 250 characters.")
             }
-            ("BAD_REQUEST", Some(CONSTRAINT_CUSTOMER_LAST_NAME_LEN)) => {
+            ("23514", Some(CONSTRAINT_CUSTOMER_LAST_NAME_LEN)) => {
                 bad_request("Last name must be shorter than 150 characters.")
             }
-            ("BAD_REQUEST", _) => bad_request("Missing required field."),
+            ("23502", _) => bad_request("Missing required field."),
+            ("22007", _) => bad_request("Invalid date format."),
             _ => internal_error(),
         };
     }
 
     internal_error()
-}
-
-fn sql_state_code_mapper(sql_state: &str) -> &str {
-    match sql_state {
-        "23505" => "CONFLICT",
-        "23514" => "BAD_REQUEST",
-        "22P02" => "BAD_REQUEST",
-        _ => "INTERNAL_ERROR",
-    }
 }
 
 fn bad_request(message: &'static str) -> HttpResponse {
