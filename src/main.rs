@@ -1,4 +1,5 @@
 mod routes;
+mod errors;
 
 use actix_web::{App, HttpServer, web};
 use dotenvy::dotenv;

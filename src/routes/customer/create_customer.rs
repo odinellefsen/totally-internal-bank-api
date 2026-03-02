@@ -1,4 +1,5 @@
 use actix_web::{HttpResponse, Responder, web};
+use crate::errors::db_errors::map_db_error;
 use serde::Deserialize;
 use sqlx::PgPool;
 
@@ -31,7 +32,7 @@ async fn create_customer(
 
     match result {
         Ok(_) => HttpResponse::Created().json("customer created"),
-        Err(err) => HttpResponse::BadRequest().json(format!("insert failed: {err}")),
+        Err(err) => map_db_error(&err),
     }
 }
 
