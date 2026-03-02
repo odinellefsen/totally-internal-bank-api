@@ -52,23 +52,23 @@ fn sql_state_code_mapper(sql_state: &str) -> &str {
 fn bad_request(message: &'static str) -> HttpResponse {
     HttpResponse::BadRequest().json(ApiErrorBody {
         status: 400,
-        code: "BAD_REQUEST",
-        message,
+        code: "BAD_REQUEST".to_string(),
+        message: message.to_string(),
     })
 }
 
 fn conflict(message: &'static str) -> HttpResponse {
     HttpResponse::Conflict().json(ApiErrorBody {
         status: 409,
-        code: "CONFLICT",
-        message,
+        code: "CONFLICT".to_string(),
+        message: message.to_string(),
     })
 }
 
 fn internal_error() -> HttpResponse {
     HttpResponse::InternalServerError().json(ApiErrorBody {
         status: 500,
-        code: "INTERNAL_ERROR",
-        message: "Unexpected error.",
+        code: "INTERNAL_ERROR".to_string(),
+        message: "Unexpected error.".to_string(),
     })
 }

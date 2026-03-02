@@ -34,8 +34,8 @@ async fn create_customer(
     match result {
         Ok(_) => HttpResponse::Created().json(ApiSuccessBody {
             status: 201,
-            code: "SUCCESS",
-            message: "Customer created",
+            code: "SUCCESS".to_string(),
+            message: "Customer created".to_string(),
             data: payload,
         }),
         Err(err) => map_db_error(&err),

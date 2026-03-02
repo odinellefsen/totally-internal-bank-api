@@ -2,14 +2,14 @@ use serde::Serialize;
 #[derive(Serialize)]
 pub struct ApiSuccessBody<T: Serialize> {
     pub status: u16,
-    pub code: &'static str,
-    pub message: &'static str,
+    pub code: String,
+    pub message: String,
     pub data: T,
 }
 
 #[derive(Serialize)]
-pub struct ApiErrorBody<'a> {
+pub struct ApiErrorBody {
     pub status: u16,
-    pub code: &'a str,
-    pub message: &'a str,
+    pub code: String,
+    pub message: String,
 }
