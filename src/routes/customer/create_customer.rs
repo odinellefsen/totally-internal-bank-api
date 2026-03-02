@@ -1,9 +1,10 @@
-use actix_web::{HttpResponse, Responder, web};
 use crate::errors::db_errors::map_db_error;
-use serde::Deserialize;
+use crate::http::response::ApiSuccessBody;
+use actix_web::{HttpResponse, Responder, web};
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 struct CreateCustomerRequest {
     customer_id: i32,
     first_name: String,
@@ -31,7 +32,12 @@ async fn create_customer(
     .await;
 
     match result {
-        Ok(_) => HttpResponse::Created().json("customer created"),
+        Ok(_) => HttpResponse::Created().json(ApiSuccessBody {
+            status: 201,
+            code: "SUCCESS",
+            message: "Customer created",
+            data: payload,
+        }),
         Err(err) => map_db_error(&err),
     }
 }

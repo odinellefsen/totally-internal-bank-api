@@ -3,6 +3,7 @@ use serde::Serialize;
 pub struct ApiSuccessBody<T: Serialize> {
     pub status: u16,
     pub code: &'static str,
+    pub message: &'static str,
     pub data: T,
 }
 
