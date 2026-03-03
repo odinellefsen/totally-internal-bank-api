@@ -54,14 +54,18 @@ fn map_customer_constraint_error(
             // So for customer.first_name, 23502 effectively means the input was empty/whitespace.
             // Because API endpoint should be guarded with String and not Option<String>
             // which prevents null being passed in directly.
-            Some(bad_request("First name cannot be empty nor only spaces."))
+            Some(bad_request(
+                "First name cannot be an empty string nor only spaces.",
+            ))
         }
         ("23502", _, Some("customer"), Some("last_name")) => {
             // last_name should be normalized with NULLIF(BTRIM(...), '') before insert.
             // So for customer.last_name, 23502 effectively means the input was empty/whitespace.
             // Because API endpoint should be guarded with String and not Option<String>
             // which prevents null being passed in directly.
-            Some(bad_request("Last name cannot be empty nor only spaces."))
+            Some(bad_request(
+                "Last name cannot be empty an empty nor only spaces.",
+            ))
         }
         ("23505", Some(CONSTRAINT_CUSTOMER_PKEY), _, _) => {
             Some(conflict("Customer with that SSN already exists."))
