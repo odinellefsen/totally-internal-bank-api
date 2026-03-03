@@ -29,7 +29,7 @@ async fn create_customer(
     let result = sqlx::query_as::<_, Customer>(
         r#"
         INSERT INTO customer (customer_id, first_name, middle_name, last_name, date_of_birth)
-        VALUES ($1, $2, NULLIF(BTRIM($3), ''), $4, $5::date)
+        VALUES ($1, NULLIF(BTRIM($2), ''), NULLIF(BTRIM($3), ''), NULLIF(BTRIM($4), ''), $5::date)
         RETURNING customer_id, first_name, middle_name, last_name, date_of_birth::text AS date_of_birth
         "#,
     )
@@ -45,7 +45,7 @@ async fn create_customer(
         Ok(customer) => HttpResponse::Created().json(ApiSuccessBody {
             status: 201,
             code: "SUCCESS".to_string(),
-            message: "Customer created".to_string(),
+            message: "Customer created.".to_string(),
             data: customer,
         }),
         Err(err) => map_db_error(&err),
