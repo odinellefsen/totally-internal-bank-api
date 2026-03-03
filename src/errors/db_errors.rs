@@ -50,10 +50,10 @@ fn map_customer_constraint_error(
 
     match (sql_state, constraint, table, column) {
         ("23502", _, Some("customer"), Some("first_name")) => {
-            Some(bad_request("First name is required."))
+            Some(bad_request("First name cannot be empty or only spaces."))
         }
         ("23502", _, Some("customer"), Some("last_name")) => {
-            Some(bad_request("Last name is required."))
+            Some(bad_request("Last name cannot be empty or only spaces."))
         }
         ("23505", Some(CONSTRAINT_CUSTOMER_PKEY), _, _) => {
             Some(conflict("Customer with that SSN already exists."))
