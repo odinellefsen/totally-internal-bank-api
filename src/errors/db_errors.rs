@@ -1,6 +1,7 @@
 use crate::http::response::ApiErrorBody;
 use actix_web::HttpResponse;
 use sqlx::Error;
+use sqlx::postgres::PgDatabaseError;
 
 // 23505: duplicate key violation
 // 23514: check violation
@@ -17,6 +18,12 @@ pub fn map_db_error(err: &Error) -> HttpResponse {
         let sql_state_code = db_err.code();
         let sql_state = sql_state_code.as_deref().unwrap_or("UNKNOWN");
         let constraint = db_err.constraint();
+        let table = db_err.table();
+        let column = db_err
+            .try_downcast_ref::<PgDatabaseError>()
+            .and_then(|pg_err| pg_err.column()); // postgres-only
+
+        println!("table: {:?}, column {:?}", table, column);
 
         if let Some(response) = map_customer_constraint_error(sql_state, constraint) {
             return response;
