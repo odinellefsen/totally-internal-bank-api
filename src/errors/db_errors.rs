@@ -70,12 +70,16 @@ fn map_generic_database_error(sql_state: &str) -> Option<HttpResponse> {
         "23503" => Some(bad_request("Referenced record does not exist.")),
         "22P02" => Some(bad_request("Invalid value format for one of the fields.")),
         "22008" => Some(bad_request(
-            "Invalid date format. Date exceeded the valid range.",
+            "Invalid date format. The format is YYYY-MM-DD.",
         )),
-        "22007" => Some(bad_request("Invalid date format.")),
-        "22009" => Some(bad_request("Invalid date format. Date out of range.")),
+        "22007" => Some(bad_request(
+            "Invalid date format. The format is YYYY-MM-DD.",
+        )),
+        "22009" => Some(bad_request(
+            "Invalid date format. The format is YYYY-MM-DD.",
+        )),
         "22015" => Some(bad_request(
-            "Invalid date format. Date is not a valid date.",
+            "Invalid date format. The format is YYYY-MM-DD.",
         )),
         _ => None,
     }
