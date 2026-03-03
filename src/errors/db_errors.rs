@@ -23,9 +23,8 @@ pub fn map_db_error(err: &Error) -> HttpResponse {
             .try_downcast_ref::<PgDatabaseError>()
             .and_then(|pg_err| pg_err.column()); // postgres-only
 
-        println!("table: {:?}, column {:?}", table, column);
-
-        if let Some(response) = map_customer_constraint_error(sql_state, constraint) {
+        if let Some(response) = map_customer_constraint_error(sql_state, constraint, table, column)
+        {
             return response;
         }
 
@@ -40,6 +39,8 @@ pub fn map_db_error(err: &Error) -> HttpResponse {
 fn map_customer_constraint_error(
     sql_state: &str,
     constraint: Option<&str>,
+    table: Option<&str>,
+    column: Option<&str>,
 ) -> Option<HttpResponse> {
     const CONSTRAINT_CUSTOMER_ID_9_DIGITS: &str = "customer_id_must_be_9_digits_chk";
     const CONSTRAINT_CUSTOMER_FIRST_NAME_LEN: &str = "customer_first_name_len_chk";
@@ -47,20 +48,26 @@ fn map_customer_constraint_error(
     const CONSTRAINT_CUSTOMER_LAST_NAME_LEN: &str = "customer_last_name_len_chk";
     const CONSTRAINT_CUSTOMER_PKEY: &str = "customer_pkey";
 
-    match (sql_state, constraint) {
-        ("23505", Some(CONSTRAINT_CUSTOMER_PKEY)) => {
+    match (sql_state, constraint, table, column) {
+        ("23502", _, Some("customer"), Some("first_name")) => {
+            Some(bad_request("First name is required."))
+        }
+        ("23502", _, Some("customer"), Some("last_name")) => {
+            Some(bad_request("Last name is required."))
+        }
+        ("23505", Some(CONSTRAINT_CUSTOMER_PKEY), _, _) => {
             Some(conflict("Customer with that SSN already exists."))
         }
-        ("23514", Some(CONSTRAINT_CUSTOMER_ID_9_DIGITS)) => Some(bad_request(
+        ("23514", Some(CONSTRAINT_CUSTOMER_ID_9_DIGITS), _, _) => Some(bad_request(
             "Customer ID must be a 9-digit number. It represents the SSN of the customer.",
         )),
-        ("23514", Some(CONSTRAINT_CUSTOMER_FIRST_NAME_LEN)) => Some(bad_request(
+        ("23514", Some(CONSTRAINT_CUSTOMER_FIRST_NAME_LEN), _, _) => Some(bad_request(
             "First name must be shorter than 150 characters.",
         )),
-        ("23514", Some(CONSTRAINT_CUSTOMER_MIDDLE_NAME_LEN)) => Some(bad_request(
+        ("23514", Some(CONSTRAINT_CUSTOMER_MIDDLE_NAME_LEN), _, _) => Some(bad_request(
             "Middle name must be shorter than 250 characters.",
         )),
-        ("23514", Some(CONSTRAINT_CUSTOMER_LAST_NAME_LEN)) => Some(bad_request(
+        ("23514", Some(CONSTRAINT_CUSTOMER_LAST_NAME_LEN), _, _) => Some(bad_request(
             "Last name must be shorter than 150 characters.",
         )),
         _ => None,
