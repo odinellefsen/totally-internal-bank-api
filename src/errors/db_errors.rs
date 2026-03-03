@@ -26,7 +26,9 @@ pub fn map_db_error(err: &Error) -> HttpResponse {
         // 22015: date is not a valid date
 
         return match (sql_state.as_str(), constraint) {
-            ("23505", Some(CONSTRAINT_CUSTOMER_PKEY)) => conflict("Customer already exists."),
+            ("23505", Some(CONSTRAINT_CUSTOMER_PKEY)) => {
+                conflict("Customer with that SSN already exists.")
+            }
             ("23514", Some(CONSTRAINT_CUSTOMER_ID_9_DIGITS)) => bad_request(
                 "Customer ID must be a 9-digit number. It represents the SSN of the customer.",
             ),
