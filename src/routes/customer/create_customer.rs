@@ -20,7 +20,7 @@ async fn create_customer(
     let result = sqlx::query(
         r#"
         INSERT INTO customer (customer_id, first_name, middle_name, last_name, date_of_birth)
-        VALUES ($1, $2, $3, $4, $5::date)
+        VALUES ($1, $2, NULLIF(BTRIM($3), ''), $4, $5::date)
         "#,
     )
     .bind(payload.customer_id)
