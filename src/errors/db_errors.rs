@@ -2,55 +2,83 @@ use crate::http::response::ApiErrorBody;
 use actix_web::HttpResponse;
 use sqlx::Error;
 
-const CONSTRAINT_CUSTOMER_ID_9_DIGITS: &str = "customer_id_must_be_9_digits_chk";
-const CONSTRAINT_CUSTOMER_FIRST_NAME_LEN: &str = "customer_first_name_len_chk";
-const CONSTRAINT_CUSTOMER_MIDDLE_NAME_LEN: &str = "customer_middle_name_len_chk";
-const CONSTRAINT_CUSTOMER_LAST_NAME_LEN: &str = "customer_last_name_len_chk";
-const CONSTRAINT_CUSTOMER_PKEY: &str = "customer_pkey";
+// 23505: duplicate key violation
+// 23514: check violation
+// 23502: not null violation
+// 23503: foreign key violation
+// 22P02: invalid text representation
+// 22007: invalid date format
+// 22008: date exceeded the valid range
+// 22009: date out of range
+// 22015: date is not a valid date
 
 pub fn map_db_error(err: &Error) -> HttpResponse {
     if let Error::Database(db_err) = err {
-        let sql_state = db_err
-            .code()
-            .map(|code| code.to_string())
-            .unwrap_or_else(|| "UNKNOWN".to_string());
+        let sql_state_code = db_err.code();
+        let sql_state = sql_state_code.as_deref().unwrap_or("UNKNOWN");
         let constraint = db_err.constraint();
 
-        // 23505: duplicate key violation
-        // 23514: check violation
-        // 23502: not null violation
-        // 22P02: invalid text representation
-        // 22007: invalid date format
-        // 22008: date exceeded the valid range
-        // 22009: date out of range
-        // 22015: date is not a valid date
+        if let Some(response) = map_customer_constraint_error(sql_state, constraint) {
+            return response;
+        }
 
-        return match (sql_state.as_str(), constraint) {
-            ("23505", Some(CONSTRAINT_CUSTOMER_PKEY)) => {
-                conflict("Customer with that SSN already exists.")
-            }
-            ("23514", Some(CONSTRAINT_CUSTOMER_ID_9_DIGITS)) => bad_request(
-                "Customer ID must be a 9-digit number. It represents the SSN of the customer.",
-            ),
-            ("23514", Some(CONSTRAINT_CUSTOMER_FIRST_NAME_LEN)) => {
-                bad_request("First name must be shorter than 150 characters.")
-            }
-            ("23514", Some(CONSTRAINT_CUSTOMER_MIDDLE_NAME_LEN)) => {
-                bad_request("Middle name must be shorter than 250 characters.")
-            }
-            ("23514", Some(CONSTRAINT_CUSTOMER_LAST_NAME_LEN)) => {
-                bad_request("Last name must be shorter than 150 characters.")
-            }
-            ("23502", _) => bad_request("Missing required field."),
-            ("22008", _) => bad_request("Invalid date format. Date exceeded the valid range"),
-            ("22007", _) => bad_request("Invalid date format."),
-            ("22009", _) => bad_request("Invalid date format. Date out of range"),
-            ("22015", _) => bad_request("Invalid date format. Date is not a valid date"),
-            _ => internal_error(),
-        };
+        if let Some(response) = map_generic_database_error(sql_state) {
+            return response;
+        }
     }
 
     internal_error()
+}
+
+fn map_customer_constraint_error(
+    sql_state: &str,
+    constraint: Option<&str>,
+) -> Option<HttpResponse> {
+    const CONSTRAINT_CUSTOMER_ID_9_DIGITS: &str = "customer_id_must_be_9_digits_chk";
+    const CONSTRAINT_CUSTOMER_FIRST_NAME_LEN: &str = "customer_first_name_len_chk";
+    const CONSTRAINT_CUSTOMER_MIDDLE_NAME_LEN: &str = "customer_middle_name_len_chk";
+    const CONSTRAINT_CUSTOMER_LAST_NAME_LEN: &str = "customer_last_name_len_chk";
+    const CONSTRAINT_CUSTOMER_PKEY: &str = "customer_pkey";
+
+    match (sql_state, constraint) {
+        ("23505", Some(CONSTRAINT_CUSTOMER_PKEY)) => {
+            Some(conflict("Customer with that SSN already exists."))
+        }
+        ("23514", Some(CONSTRAINT_CUSTOMER_ID_9_DIGITS)) => Some(bad_request(
+            "Customer ID must be a 9-digit number. It represents the SSN of the customer.",
+        )),
+        ("23514", Some(CONSTRAINT_CUSTOMER_FIRST_NAME_LEN)) => Some(bad_request(
+            "First name must be shorter than 150 characters.",
+        )),
+        ("23514", Some(CONSTRAINT_CUSTOMER_MIDDLE_NAME_LEN)) => Some(bad_request(
+            "Middle name must be shorter than 250 characters.",
+        )),
+        ("23514", Some(CONSTRAINT_CUSTOMER_LAST_NAME_LEN)) => Some(bad_request(
+            "Last name must be shorter than 150 characters.",
+        )),
+        _ => None,
+    }
+}
+
+fn map_generic_database_error(sql_state: &str) -> Option<HttpResponse> {
+    match sql_state {
+        "23505" => Some(conflict(
+            "A record with one of these values already exists.",
+        )),
+        "23514" => Some(bad_request("Input failed a database validation check.")),
+        "23502" => Some(bad_request("Missing required field.")),
+        "23503" => Some(bad_request("Referenced record does not exist.")),
+        "22P02" => Some(bad_request("Invalid value format for one of the fields.")),
+        "22008" => Some(bad_request(
+            "Invalid date format. Date exceeded the valid range.",
+        )),
+        "22007" => Some(bad_request("Invalid date format.")),
+        "22009" => Some(bad_request("Invalid date format. Date out of range.")),
+        "22015" => Some(bad_request(
+            "Invalid date format. Date is not a valid date.",
+        )),
+        _ => None,
+    }
 }
 
 fn bad_request(message: &'static str) -> HttpResponse {
