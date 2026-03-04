@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
 #[derive(Deserialize)]
-struct CreateCustomerRequest {
+struct UpdateCustomerRequest {
     customer_id: i32,
     first_name: String,
     middle_name: Option<String>,
