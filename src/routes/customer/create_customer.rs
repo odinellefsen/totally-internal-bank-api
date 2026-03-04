@@ -4,7 +4,7 @@ use actix_web::{HttpResponse, Responder, web};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize)]
 struct CreateCustomerRequest {
     customer_id: i32,
     first_name: String,
@@ -26,17 +26,23 @@ async fn create_customer(
     db: web::Data<PgPool>,
     payload: web::Json<CreateCustomerRequest>,
 ) -> impl Responder {
-    let result = sqlx::query_as::<_, Customer>(
+    let result = sqlx::query_as!(
+        Customer,
         r#"
-        SELECT customer_id, first_name, middle_name, last_name, date_of_birth
-        FROM create_customer($1, $2, $3, $4, $5::date)
+        SELECT
+            customer_id as "customer_id!",
+            first_name as "first_name!",
+            middle_name,
+            last_name as "last_name!",
+            date_of_birth::text as "date_of_birth!"
+        FROM create_customer($1, $2, $3, $4, to_date($5, 'YYYY-MM-DD'))
         "#,
+        payload.customer_id,
+        payload.first_name.as_str(),
+        payload.middle_name.as_deref(),
+        payload.last_name.as_str(),
+        payload.date_of_birth.as_str(),
     )
-    .bind(payload.customer_id)
-    .bind(&payload.first_name)
-    .bind(&payload.middle_name)
-    .bind(&payload.last_name)
-    .bind(&payload.date_of_birth)
     .fetch_one(db.get_ref())
     .await;
 
