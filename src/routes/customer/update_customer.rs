@@ -1,5 +1,5 @@
 use crate::errors::db_errors::map_db_error;
-use crate::http::response::ApiSuccessBody;
+use crate::http::response::{ApiErrorBody, ApiSuccessBody};
 use actix_web::{HttpResponse, Responder, web};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
@@ -22,9 +22,9 @@ struct Customer {
     date_of_birth: String,
 }
 
-async fn create_customer(
+async fn update_customer(
     db: web::Data<PgPool>,
-    payload: web::Json<CreateCustomerRequest>,
+    payload: web::Json<UpdateCustomerRequest>,
 ) -> impl Responder {
     let result = sqlx::query_as!(
         Customer,
@@ -35,7 +35,13 @@ async fn create_customer(
             middle_name,
             last_name as "last_name!",
             date_of_birth::text as "date_of_birth!"
-        FROM create_customer($1, $2, $3, $4, to_date($5, 'YYYY-MM-DD'))
+        FROM update_customer(
+            $1::integer,
+            $2::varchar(150),
+            $3::varchar(250),
+            $4::varchar(150),
+            to_date($5, 'YYYY-MM-DD')
+        )
         "#,
         payload.customer_id,
         payload.first_name.as_str(),
@@ -43,20 +49,25 @@ async fn create_customer(
         payload.last_name.as_str(),
         payload.date_of_birth.as_str(),
     )
-    .fetch_one(db.get_ref())
+    .fetch_optional(db.get_ref())
     .await;
 
     match result {
-        Ok(customer) => HttpResponse::Created().json(ApiSuccessBody {
-            status: 201,
+        Ok(Some(customer)) => HttpResponse::Ok().json(ApiSuccessBody {
+            status: 200,
             code: "SUCCESS".to_string(),
-            message: "Customer created.".to_string(),
+            message: "Customer updated.".to_string(),
             data: customer,
+        }),
+        Ok(None) => HttpResponse::NotFound().json(ApiErrorBody {
+            status: 404,
+            code: "NOT_FOUND".to_string(),
+            message: "Customer not found.".to_string(),
         }),
         Err(err) => map_db_error(&err),
     }
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.route("/customers", web::post().to(create_customer));
+    cfg.route("/customers", web::put().to(update_customer));
 }
