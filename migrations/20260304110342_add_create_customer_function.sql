@@ -1,3 +1,4 @@
+-- Add migration script here
 CREATE OR REPLACE FUNCTION create_customer(
     p_customer_id customer.customer_id%TYPE,
     p_first_name customer.first_name%TYPE,
