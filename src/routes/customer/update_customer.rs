@@ -6,11 +6,15 @@ use sqlx::PgPool;
 
 #[derive(Deserialize)]
 struct UpdateCustomerRequest {
-    customer_id: i32,
-    first_name: String,
+    first_name: Option<String>,
     middle_name: Option<String>,
-    last_name: String,
-    date_of_birth: String,
+    last_name: Option<String>,
+    date_of_birth: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct UpdateCustomerPath {
+    customer_id: i32,
 }
 
 #[derive(Serialize, sqlx::FromRow)]
@@ -44,8 +48,21 @@ struct UpdateCustomerResponse {
 
 async fn update_customer(
     db: web::Data<PgPool>,
+    path: web::Path<UpdateCustomerPath>,
     payload: web::Json<UpdateCustomerRequest>,
 ) -> impl Responder {
+    if payload.first_name.is_none()
+        && payload.middle_name.is_none()
+        && payload.last_name.is_none()
+        && payload.date_of_birth.is_none()
+    {
+        return HttpResponse::BadRequest().json(ApiErrorBody {
+            status: 400,
+            code: "BAD_REQUEST".to_string(),
+            message: "At least one field must be provided to update.".to_string(),
+        });
+    }
+
     let result = sqlx::query_as!(
         UpdateCustomerRow,
         r#"
@@ -65,14 +82,17 @@ async fn update_customer(
             $2::varchar(150),
             $3::varchar(250),
             $4::varchar(150),
-            to_date($5, 'YYYY-MM-DD')
+            CASE
+                WHEN $5::text IS NULL THEN NULL
+                ELSE to_date($5::text, 'YYYY-MM-DD')
+            END
         )
         "#,
-        payload.customer_id,
-        payload.first_name.as_str(),
+        path.customer_id,
+        payload.first_name.as_deref(),
         payload.middle_name.as_deref(),
-        payload.last_name.as_str(),
-        payload.date_of_birth.as_str(),
+        payload.last_name.as_deref(),
+        payload.date_of_birth.as_deref(),
     )
     .fetch_optional(db.get_ref())
     .await;
@@ -109,5 +129,5 @@ async fn update_customer(
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.route("/customers", web::put().to(update_customer));
+    cfg.route("/customers/{customer_id}", web::patch().to(update_customer));
 }
