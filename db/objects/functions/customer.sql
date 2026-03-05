@@ -36,11 +36,16 @@ CREATE OR REPLACE FUNCTION update_customer(
     p_date_of_birth customer.date_of_birth%TYPE
 )
 RETURNS TABLE (
-    customer_id customer.customer_id%TYPE,
-    first_name customer.first_name%TYPE,
-    middle_name customer.middle_name%TYPE,
-    last_name customer.last_name%TYPE,
-    date_of_birth TEXT
+    old_customer_id customer.customer_id%TYPE,
+    old_first_name customer.first_name%TYPE,
+    old_middle_name customer.middle_name%TYPE,
+    old_last_name customer.last_name%TYPE,
+    old_date_of_birth TEXT,
+    new_customer_id customer.customer_id%TYPE,
+    new_first_name customer.first_name%TYPE,
+    new_middle_name customer.middle_name%TYPE,
+    new_last_name customer.last_name%TYPE,
+    new_date_of_birth TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -57,14 +62,36 @@ BEGIN
     END IF;
 
     RETURN QUERY
-    UPDATE customer AS c
-    SET
-        first_name = NULLIF(BTRIM(p_first_name), ''),
-        middle_name = NULLIF(BTRIM(p_middle_name), ''),
-        last_name = NULLIF(BTRIM(p_last_name), ''),
-        date_of_birth = p_date_of_birth
-    WHERE c.customer_id = p_customer_id
-    RETURNING c.customer_id, c.first_name, c.middle_name, c.last_name, c.date_of_birth::text;
+    WITH old_row AS (
+        SELECT c.customer_id, c.first_name, c.middle_name, c.last_name, c.date_of_birth
+        FROM customer AS c
+        WHERE c.customer_id = p_customer_id
+        FOR UPDATE
+    ),
+    updated AS (
+        UPDATE customer AS c
+        SET
+            first_name = NULLIF(BTRIM(p_first_name), ''),
+            middle_name = NULLIF(BTRIM(p_middle_name), ''),
+            last_name = NULLIF(BTRIM(p_last_name), ''),
+            date_of_birth = p_date_of_birth
+        FROM old_row AS o
+        WHERE c.customer_id = o.customer_id
+        RETURNING c.customer_id, c.first_name, c.middle_name, c.last_name, c.date_of_birth
+    )
+    SELECT
+        o.customer_id,
+        o.first_name,
+        o.middle_name,
+        o.last_name,
+        o.date_of_birth::text,
+        u.customer_id,
+        u.first_name,
+        u.middle_name,
+        u.last_name,
+        u.date_of_birth::text
+    FROM old_row AS o
+    JOIN updated AS u ON u.customer_id = o.customer_id;
 END;
 $$;
 
