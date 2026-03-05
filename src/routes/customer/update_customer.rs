@@ -1,6 +1,7 @@
 use crate::errors::db_errors::map_db_error;
 use crate::http::response::{ApiErrorBody, ApiSuccessBody};
 use actix_web::{HttpResponse, Responder, web};
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
@@ -61,6 +62,16 @@ async fn update_customer(
             code: "BAD_REQUEST".to_string(),
             message: "At least one field must be provided to update.".to_string(),
         });
+    }
+
+    if let Some(date_of_birth) = payload.date_of_birth.as_deref() {
+        if NaiveDate::parse_from_str(date_of_birth, "%Y-%m-%d").is_err() {
+            return HttpResponse::BadRequest().json(ApiErrorBody {
+                status: 400,
+                code: "BAD_REQUEST".to_string(),
+                message: "Invalid date format. The format is YYYY-MM-DD.".to_string(),
+            });
+        }
     }
 
     let result = sqlx::query_as!(

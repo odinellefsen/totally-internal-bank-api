@@ -1,6 +1,7 @@
 use crate::errors::db_errors::map_db_error;
-use crate::http::response::ApiSuccessBody;
+use crate::http::response::{ApiErrorBody, ApiSuccessBody};
 use actix_web::{HttpResponse, Responder, web};
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
@@ -26,6 +27,14 @@ async fn create_customer(
     db: web::Data<PgPool>,
     payload: web::Json<CreateCustomerRequest>,
 ) -> impl Responder {
+    if NaiveDate::parse_from_str(payload.date_of_birth.as_str(), "%Y-%m-%d").is_err() {
+        return HttpResponse::BadRequest().json(ApiErrorBody {
+            status: 400,
+            code: "BAD_REQUEST".to_string(),
+            message: "Invalid date format. The format is YYYY-MM-DD.".to_string(),
+        });
+    }
+
     let result = sqlx::query_as!(
         Customer,
         r#"
