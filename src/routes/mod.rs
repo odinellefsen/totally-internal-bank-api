@@ -1,5 +1,6 @@
-pub mod health;
+pub mod account;
 pub mod customer;
+pub mod health;
 
 use actix_web::web;
 
