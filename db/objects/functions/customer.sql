@@ -81,6 +81,17 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    -- we need to add this constraint check manually again because
+    -- anything that is in the WHERE clause isn't checked before
+    -- the lookup is done meaning that it first tries to find a matching
+    -- customer_id and only after do constraint checks apply.
+    -- this leads bad api error responses.
+    IF p_customer_id NOT BETWEEN 100000000 AND 999999999 THEN
+        RAISE EXCEPTION 'customer_id violates 9-digit constraint'
+            USING ERRCODE = '23514',
+                  CONSTRAINT = 'customer_id_must_be_9_digits_chk';
+    END IF;
+    
     RETURN QUERY
     DELETE FROM customer AS c
     WHERE c.customer_id = p_customer_id
