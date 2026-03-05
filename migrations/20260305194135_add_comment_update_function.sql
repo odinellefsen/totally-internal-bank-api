@@ -1,0 +1,59 @@
+-- Add migration script here
+CREATE OR REPLACE FUNCTION public.update_customer(p_customer_id integer, p_first_name text, p_middle_name text, p_last_name text, p_date_of_birth date)
+ RETURNS TABLE(old_customer_id integer, old_first_name text, old_middle_name text, old_last_name text, old_date_of_birth text, new_customer_id integer, new_first_name text, new_middle_name text, new_last_name text, new_date_of_birth text)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+	-- we need to add this constraint check manually again because
+    -- anything that is in the WHERE clause isn't checked before
+    -- the lookup is done meaning that it first tries to find a matching
+    -- customer_id and only after do constraint checks apply.
+    -- this leads bad api error responses.
+    IF p_customer_id NOT BETWEEN 100000000 AND 999999999 THEN
+        RAISE EXCEPTION 'customer_id violates 9-digit constraint'
+            USING ERRCODE = '23514',
+                  CONSTRAINT = 'customer_id_must_be_9_digits_chk';
+    END IF;
+
+    RETURN QUERY
+    WITH old_row AS (
+        SELECT c.customer_id, c.first_name, c.middle_name, c.last_name, c.date_of_birth
+        FROM customer AS c
+        WHERE c.customer_id = p_customer_id
+        FOR UPDATE
+    ),
+    updated AS (
+        UPDATE customer AS c
+        SET
+            first_name = CASE
+                WHEN p_first_name IS NULL THEN c.first_name
+                ELSE NULLIF(BTRIM(p_first_name), '')
+            END,
+            middle_name = CASE
+                WHEN p_middle_name IS NULL THEN c.middle_name
+                ELSE NULLIF(BTRIM(p_middle_name), '')
+            END,
+            last_name = CASE
+                WHEN p_last_name IS NULL THEN c.last_name
+                ELSE NULLIF(BTRIM(p_last_name), '')
+            END,
+            date_of_birth = COALESCE(p_date_of_birth, c.date_of_birth)
+        FROM old_row AS o
+        WHERE c.customer_id = o.customer_id
+        RETURNING c.customer_id, c.first_name, c.middle_name, c.last_name, c.date_of_birth
+    )
+    SELECT
+        o.customer_id,
+        o.first_name,
+        o.middle_name,
+        o.last_name,
+        o.date_of_birth::text,
+        u.customer_id,
+        u.first_name,
+        u.middle_name,
+        u.last_name,
+        u.date_of_birth::text
+    FROM old_row AS o
+    JOIN updated AS u ON u.customer_id = o.customer_id;
+END;
+$function$
