@@ -45,6 +45,12 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF p_customer_id NOT BETWEEN 100000000 AND 999999999 THEN
+        RAISE EXCEPTION 'customer_id violates 9-digit constraint'
+            USING ERRCODE = '23514',
+                  CONSTRAINT = 'customer_id_must_be_9_digits_chk';
+    END IF;
+
     RETURN QUERY
     UPDATE customer AS c
     SET
