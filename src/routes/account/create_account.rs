@@ -44,7 +44,7 @@ async fn create_account(
             middle_name,
             last_name as "last_name!",
             date_of_birth::text as "date_of_birth!"
-        FROM create_customer($1, $2, $3, $4, to_date($5, 'YYYY-MM-DD'))
+        FROM create_account($1, $2, $3, $4, to_date($5, 'YYYY-MM-DD'))
         "#,
         payload.customer_id,
         payload.first_name.as_str(),
